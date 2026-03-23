@@ -1,6 +1,5 @@
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Random;
 import javax.swing.*;
@@ -33,6 +32,18 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
     Font pixelFont;
     boolean gameOver = false;
     double score =0;
+    int selectedOption = 0; // lua chon man choi
+    int countdown =4;// dem count down
+    boolean isCountingDown = false;
+    //so lương man
+    enum GameState{
+        MENU,
+        PLAYING,
+        SELECT_BIRD,
+        HIGH_SCORE
+    }
+    GameState gameState = GameState.MENU;
+
     FlappyBird(){
         setPreferredSize(new Dimension(boardWidth,boardHeight));
         //setBackground(Color.blue);
@@ -48,9 +59,9 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
         try{
             pixelFont = Font.createFont(Font.TRUETYPE_FONT,
                     getClass().getResourceAsStream("/font/PressStart2P-Regular.ttf"))
-                    .deriveFont(24f);
+                    .deriveFont(18f);
         }catch (Exception e){
-            pixelFont = new Font("Arial",Font.PLAIN,24);
+            pixelFont = new Font("Arial",Font.PLAIN,18);
         }
         //bird
         bird = new Bird(birdX,birdY,birdWidth,birdHeight,birdImg);
@@ -87,9 +98,68 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
 
     public void draw(Graphics g){
         g.drawImage(backgroudImg, 0, 0, boardWidth, boardHeight, null);
-
+        if(gameState==GameState.MENU){
+            drawMenu(g);
+        } else if (gameState==GameState.PLAYING) {
+            drawPlaying(g);
+        } else if (gameState==GameState.SELECT_BIRD) {
+           // drawSelectBird(g);
+        } else if (gameState==GameState.HIGH_SCORE) {
+            //drawHighScore(g);
+        }
+    }
+    //Ve draw menu
+    void drawMenu(Graphics g){
+        g.setFont(pixelFont);
+        g.setColor(Color.white);
+        g.drawString("FLAPPY BIRD", 70, 160);
+        String[] options = {
+                "Start Game",
+                "Select Bird",
+                "Hight Score"
+        };
+        int startX = 80;
+        int startY = 250;
+        int boxWidth = 250;
+        int boxHeight = 40;
+        for (int i=0; i< options.length;i++){
+            int y = startY + i*60;
+            //neu dang duoc chon
+            if(i==selectedOption){
+                g.setColor(Color.yellow);
+                g.fillRect(startX-10,y-30,boxWidth,boxHeight);
+                g.setColor(Color.black);
+            }else{
+                g.setColor(Color.white);
+            }
+            g.drawString(options[i],startX,y);
+        }
+    }
+    // ve man
+    public void drawPlaying(Graphics g){
+        //bat dau choi
+        g.drawImage(backgroudImg, 0, 0, boardWidth, boardHeight, null);
         // draw bird
         g.drawImage(bird.img,bird.birdX,bird.birdY,bird.birdWidth,bird.birdHeight,null);
+
+        //ve dem thoi gian
+        if(isCountingDown){
+            g.setColor(Color.black);
+            g.setFont(pixelFont.deriveFont(40F));
+            String text = String.valueOf(countdown);
+            FontMetrics fm = g.getFontMetrics();
+            int textWidth = fm.stringWidth(text);
+            int x = (boardWidth - textWidth) / 2;
+            int y = boardHeight / 2;
+
+            // viền đen
+            g.drawString(text, x + 3, y + 3);
+            // chữ trắng
+            g.setColor(Color.WHITE);
+            g.drawString(text, x, y);
+            return;
+
+        }
 
         // draw pipes
         for (int i = 0;i<pipes.size();i++){
@@ -146,27 +216,85 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        move();
-        repaint();
+        //move();
+
         if(gameOver){
             placePinesTimer.stop();
             gameLoop.stop();
         }
-
+        if (gameState==GameState.PLAYING){
+            if(isCountingDown){
+                handleCountDown();
+            }else{
+                move();
+            }
+        }
+        repaint();
+    }
+    //ham reset game
+    public void resetGame(){
+        bird.birdY = birdY;
+        pipes.clear();
+        score = 0;
+        gameOver=false;
+        gameLoop.start();
+        placePinesTimer.start();
+        countdown =3;
+        isCountingDown = true;
+    }
+    //ham count down
+    long lastTime = System.currentTimeMillis();
+    public void handleCountDown(){
+        long currentTime = System.currentTimeMillis();
+        if(currentTime-lastTime>=1000){
+            countdown--;
+            lastTime=currentTime;
+        }
+        if(countdown<=0){
+            isCountingDown=false;
+            pipes.clear();
+            placePinesTimer.start();
+        }
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if(e.getKeyCode()==KeyEvent.VK_SPACE){
-            bird.jump();
-            if(gameOver){
-                //reset game
-                bird.birdY = birdY;
-                pipes.clear();
-                score = 0;
-                gameOver=false;
-                gameLoop.start();
-                placePinesTimer.start();
+        if(e.getKeyCode()==KeyEvent.VK_ESCAPE){
+            gameState=GameState.MENU;
+            repaint();
+        }
+        if(gameState==GameState.PLAYING&&!isCountingDown){
+            if(e.getKeyCode()==KeyEvent.VK_SPACE){
+                bird.jump();
+                if(gameOver){
+                    //reset game
+                    resetGame();
+                }
+            }
+        }
+        if(gameState==GameState.MENU){
+            if(e.getKeyCode()==KeyEvent.VK_UP){
+                selectedOption--;
+                if(selectedOption<0) selectedOption=2;
+                repaint();
+            }
+            if(e.getKeyCode()==KeyEvent.VK_DOWN){
+                selectedOption++;
+                if(selectedOption>2) selectedOption=0;
+                repaint();
+            }
+            if(e.getKeyCode()==KeyEvent.VK_ENTER){
+                if(selectedOption==0){
+                    resetGame();
+                    gameState=GameState.PLAYING;
+                    repaint();
+                } else if (selectedOption==1) {
+                    gameState=GameState.SELECT_BIRD;
+                    repaint();
+                } else if (selectedOption==2) {
+                    gameState=GameState.HIGH_SCORE;
+                    repaint();
+                }
             }
         }
     }

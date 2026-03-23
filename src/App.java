@@ -9,7 +9,6 @@ public class App{
         frame.setLocationRelativeTo(null); // dat frame o giua
         frame.setResizable(false); // khong cho phong to thu nho man choi
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
         FlappyBird flappyBird = new FlappyBird();
         frame.add(flappyBird);
         frame.pack();
