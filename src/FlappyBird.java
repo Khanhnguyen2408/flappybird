@@ -43,6 +43,10 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
     int highScore = 0;
     boolean newHighScore = false;
 
+    // ket noi giua 2 class
+    BirdSelectionScreen birdSelectionScreen;
+    int selectBirdIndex=0;
+
     //so lương man
     enum GameState{
         MENU,
@@ -53,6 +57,9 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
     GameState gameState = GameState.MENU;
 
     FlappyBird(){
+        //tao contructor ket noi den man hinh bird
+        birdSelectionScreen = new BirdSelectionScreen(this);
+
         setPreferredSize(new Dimension(boardWidth,boardHeight));
         //setBackground(Color.blue);
         setFocusable(true);
@@ -60,7 +67,7 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
 
         // load img
         backgroudImg = new ImageIcon(getClass().getResource("/img/flappybirdbg.png")).getImage();
-        birdImg = new ImageIcon(getClass().getResource("./img/flappybird.png")).getImage();
+        //birdImg = new ImageIcon(getClass().getResource("./img/flappybird.png")).getImage();
         topPipeImg = new ImageIcon(getClass().getResource("/img/toppipe.png")).getImage();
         bottomPipeImg = new ImageIcon(getClass().getResource("/img/bottompipe.png")).getImage();
         //load font
@@ -140,8 +147,7 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
         } else if (gameState==GameState.PLAYING) {
             drawPlaying(g);
         } else if (gameState==GameState.SELECT_BIRD) {
-           // drawSelectBird(g);
-            //drawHighScore(g);
+           birdSelectionScreen.drawSelectBird(g);
         } else if (gameState==GameState.HIGH_SCORE) {
             drawHighScore(g);
         }
@@ -264,7 +270,7 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
         g.drawImage(backgroudImg, 0, 0, boardWidth, boardHeight,null);
         g.setFont(pixelFont.deriveFont(25F));
         g.setColor(Color.white);
-        g.drawString("Flappy Bird",40,100);
+        g.drawString("Flappy Bird",50,200);
         g.setFont(pixelFont.deriveFont(20F));
         g.drawString("HIGH SCORE",80, 220);
         g.drawString(String.valueOf(highScore),140,250);
@@ -415,6 +421,11 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
                     repaint();
                 }
             }
+        }
+        //xu ly o man chon chim
+        else if (gameState==GameState.SELECT_BIRD) {
+            birdSelectionScreen.handleKey(e);
+            repaint();
         }
         if(gameOver){
             if(e.getKeyCode()==KeyEvent.VK_LEFT){
